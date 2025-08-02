@@ -3,6 +3,7 @@ from PyQt5 import QtWidgets, QtCore
 from .analysis import analyze_audio
 from .midi_export import export_midi
 from .piano_roll import PianoRollWidget
+from .text_export import export_text as export_text_file
 
 class DropLabel(QtWidgets.QLabel):
     file_dropped = QtCore.pyqtSignal(str)
@@ -42,8 +43,14 @@ class MainWindow(QtWidgets.QMainWindow):
         buttons = QtWidgets.QHBoxLayout()
         self.analyze_btn = QtWidgets.QPushButton('Analyze Song')
         self.export_btn = QtWidgets.QPushButton('Export as MIDI')
+        self.export_text_btn = QtWidgets.QPushButton('Export Notes as Text')
         self.reset_btn = QtWidgets.QPushButton('Reset')
-        for btn in (self.analyze_btn, self.export_btn, self.reset_btn):
+        for btn in (
+            self.analyze_btn,
+            self.export_btn,
+            self.export_text_btn,
+            self.reset_btn,
+        ):
             btn.setStyleSheet(f'background-color:{accent}; color:white; padding:8px;')
             btn.setCursor(QtCore.Qt.PointingHandCursor)
             buttons.addWidget(btn)
@@ -51,6 +58,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.analyze_btn.setToolTip('Analyze the selected audio file')
         self.export_btn.setToolTip('Export detected notes as a MIDI file')
+        self.export_text_btn.setToolTip('Export detected notes as a text file')
         self.reset_btn.setToolTip('Clear the current song and analysis')
 
         self.info = QtWidgets.QTextEdit()
@@ -71,6 +79,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(central)
         self.analyze_btn.clicked.connect(self.analyze)
         self.export_btn.clicked.connect(self.export)
+        self.export_text_btn.clicked.connect(self.export_text)
         self.reset_btn.clicked.connect(self.reset)
 
     def set_file(self, path: str):
@@ -108,6 +117,27 @@ class MainWindow(QtWidgets.QMainWindow):
             self.progress.setVisible(True)
             QtWidgets.QApplication.processEvents()
             export_midi(self.segments, path)
+            self.progress.setVisible(False)
+
+    def export_text(self):
+        if not self.segments:
+            return
+        path, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self, 'Save Notes as Text', filter='Text Files (*.txt)'
+        )
+        if path:
+            reply = QtWidgets.QMessageBox.question(
+                self,
+                'Include Guitar Tabs?',
+                'Include guitar string and fret information?',
+                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+                QtWidgets.QMessageBox.No,
+            )
+            include_tab = reply == QtWidgets.QMessageBox.Yes
+            self.progress.setFormat('Exporting...')
+            self.progress.setVisible(True)
+            QtWidgets.QApplication.processEvents()
+            export_text_file(self.segments, path, include_tab=include_tab)
             self.progress.setVisible(False)
 
     def reset(self):
