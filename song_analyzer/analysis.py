@@ -1,7 +1,7 @@
 import numpy as np
 import librosa
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Tuple
 
 @dataclass
 class NoteEvent:
@@ -15,6 +15,38 @@ class SegmentAnalysis:
     key: str
     tempo: float
     notes: List[NoteEvent] = field(default_factory=list)
+
+
+@dataclass
+class PercussionEvent:
+    time: float
+    hit_type: str
+
+
+def extract_percussion_events(y: np.ndarray, sr: int) -> List[PercussionEvent]:
+    """Detect basic percussion hits in an audio signal."""
+    _, y_perc = librosa.effects.hpss(y)
+    onset_env = librosa.onset.onset_strength(y=y_perc, sr=sr)
+    onset_frames = librosa.onset.onset_detect(onset_envelope=onset_env, sr=sr)
+    S = np.abs(librosa.stft(y_perc))
+    freqs = librosa.fft_frequencies(sr=sr)
+    events: List[PercussionEvent] = []
+    for frame in onset_frames:
+        if frame >= S.shape[1]:
+            continue
+        spectrum = S[:, frame]
+        kick = spectrum[(freqs >= 50) & (freqs <= 150)].sum()
+        snare = spectrum[(freqs >= 200) & (freqs <= 800)].sum()
+        hihat = spectrum[freqs >= 5000].sum()
+        energies = {
+            "Kick": kick,
+            "Snare/Clap": snare,
+            "Hi-hat": hihat,
+        }
+        hit_type = max(energies, key=energies.get)
+        time = float(librosa.frames_to_time(frame, sr=sr))
+        events.append(PercussionEvent(time=time, hit_type=hit_type))
+    return events
 
 
 def _group_notes(times: np.ndarray, notes: np.ndarray, offset: float) -> List[NoteEvent]:
@@ -78,16 +110,17 @@ def analyze_segment(segment: np.ndarray, sr: int, name: str, offset: float) -> S
     return SegmentAnalysis(name=name, key=key, tempo=float(tempo), notes=events)
 
 
-def analyze_audio(path: str) -> List[SegmentAnalysis]:
+def analyze_audio(path: str) -> Tuple[List[SegmentAnalysis], List[PercussionEvent]]:
     y, sr = librosa.load(path)
     total = len(y)
     third = total // 3
     segments = [
-        ('Intro', y[:third], 0.0),
-        ('Mid', y[third: 2 * third], third / sr),
-        ('Outro', y[2 * third:], 2 * third / sr),
+        ("Intro", y[:third], 0.0),
+        ("Mid", y[third: 2 * third], third / sr),
+        ("Outro", y[2 * third:], 2 * third / sr),
     ]
     analyses: List[SegmentAnalysis] = []
     for name, seg, offset in segments:
         analyses.append(analyze_segment(seg, sr, name, offset))
-    return analyses
+    percussion = extract_percussion_events(y, sr)
+    return analyses, percussion
