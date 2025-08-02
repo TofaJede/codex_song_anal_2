@@ -31,6 +31,7 @@ class MainWindow(QtWidgets.QMainWindow):
         accent = 'rgb(100,51,162)'
         self.file_path = None
         self.segments = []
+        self.percussion = []
 
         central = QtWidgets.QWidget()
         layout = QtWidgets.QVBoxLayout(central)
@@ -58,7 +59,7 @@ class MainWindow(QtWidgets.QMainWindow):
         layout.addWidget(self.info)
 
         self.piano = PianoRollWidget()
-        self.piano.setToolTip('Visual piano roll of detected notes')
+        self.piano.setToolTip('Visual piano roll of detected notes and percussion')
         layout.addWidget(self.piano)
 
         self.progress = QtWidgets.QProgressBar()
@@ -87,7 +88,7 @@ class MainWindow(QtWidgets.QMainWindow):
         dialog.setCancelButton(None)
         dialog.show()
         QtWidgets.QApplication.processEvents()
-        self.segments = analyze_audio(self.file_path)
+        self.segments, self.percussion = analyze_audio(self.file_path)
         name = os.path.basename(self.file_path)
         info_lines = [f'File: {name}']
         for seg in self.segments:
@@ -95,7 +96,7 @@ class MainWindow(QtWidgets.QMainWindow):
             line = f"{seg.name}: Key {seg.key}, Tempo {seg.tempo:.1f} BPM\nNotes: {notes}"
             info_lines.append(line)
         self.info.setText('\n\n'.join(info_lines))
-        self.piano.display(self.segments)
+        self.piano.display(self.segments, self.percussion)
         dialog.close()
 
     def export(self):
@@ -112,7 +113,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def reset(self):
         self.file_path = None
         self.segments = []
+        self.percussion = []
         self.setWindowTitle('Song Analyzer')
         self.info.clear()
-        self.piano.plot.clear()
+        self.piano.clear()
         self.progress.setVisible(False)
