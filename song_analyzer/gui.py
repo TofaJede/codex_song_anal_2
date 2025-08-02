@@ -78,8 +78,11 @@ class MainWindow(QtWidgets.QMainWindow):
     def analyze(self):
         if not self.file_path:
             return
-        self.progress.setFormat('Analyzing...')
-        self.progress.setVisible(True)
+        dialog = QtWidgets.QProgressDialog('Analyzing song...', None, 0, 0, self)
+        dialog.setWindowTitle('Please wait')
+        dialog.setWindowModality(QtCore.Qt.ApplicationModal)
+        dialog.setCancelButton(None)
+        dialog.show()
         QtWidgets.QApplication.processEvents()
         self.segments = analyze_audio(self.file_path)
         info_lines = []
@@ -89,7 +92,7 @@ class MainWindow(QtWidgets.QMainWindow):
             info_lines.append(line)
         self.info.setText('\n\n'.join(info_lines))
         self.piano.display(self.segments)
-        self.progress.setVisible(False)
+        dialog.close()
 
     def export(self):
         if not self.segments:
