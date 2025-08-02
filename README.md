@@ -24,5 +24,7 @@ python main.py
 - `song_analyzer/midi_export.py` – MIDI export utility
 
 ## Notes
-This project requires packages such as `librosa`, `PyQt5`, `pyqtgraph` and `pretty_midi` which
-may need system dependencies to install. The application does not provide audio playback.
+This project requires packages such as `librosa`, `PyQt5` and `pyqtgraph` which may need
+system dependencies to install. MIDI export can optionally use `pretty_midi` if it is
+available, but a minimal fallback implementation is bundled with the project. The
+application does not provide audio playback.
