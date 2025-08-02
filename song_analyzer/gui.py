@@ -1,3 +1,4 @@
+import os
 from PyQt5 import QtWidgets, QtCore
 from .analysis import analyze_audio
 from .midi_export import export_midi
@@ -73,7 +74,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def set_file(self, path: str):
         self.file_path = path
-        self.info.setText(f'Selected file: {path}')
+        name = os.path.basename(path)
+        self.setWindowTitle(f'Song Analyzer - {name}')
+        self.info.setText(f'Selected file: {name}')
 
     def analyze(self):
         if not self.file_path:
@@ -85,7 +88,8 @@ class MainWindow(QtWidgets.QMainWindow):
         dialog.show()
         QtWidgets.QApplication.processEvents()
         self.segments = analyze_audio(self.file_path)
-        info_lines = []
+        name = os.path.basename(self.file_path)
+        info_lines = [f'File: {name}']
         for seg in self.segments:
             notes = ', '.join(n.name for n in seg.notes[:10])
             line = f"{seg.name}: Key {seg.key}, Tempo {seg.tempo:.1f} BPM\nNotes: {notes}"
@@ -108,6 +112,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def reset(self):
         self.file_path = None
         self.segments = []
+        self.setWindowTitle('Song Analyzer')
         self.info.clear()
         self.piano.plot.clear()
         self.progress.setVisible(False)
