@@ -22,9 +22,27 @@ _NOTE_MAP = {
 
 
 def note_name_to_number(name: str) -> int:
-    """Convert a note name (e.g. ``C4``) to a MIDI note number."""
+    """Convert a note name (e.g. ``C4``) to a MIDI note number.
+
+    ``librosa`` (used by the analysis module) returns note names containing
+    Unicode accidentals such as ``"♯"`` and ``"♭"``.  The original implementation
+    of this stub only recognised ASCII ``#`` and ``b`` characters which caused a
+    ``KeyError`` for names like ``"C♯4"`` when exporting to MIDI.  To mirror the
+    behaviour of :func:`pretty_midi.note_name_to_number` we normalise these
+    characters before looking up the semitone value.
+    """
+
+    # Separate note and octave.  The simple slicing works because this project
+    # only deals with octave numbers in the range 0-9.
     note = name[:-1]
     octave = int(name[-1])
+
+    # Normalise Unicode accidentals to ASCII representations.
+    note = note.replace("♯", "#").replace("♭", "b")
+
+    if note not in _NOTE_MAP:
+        raise ValueError(f"Unknown note name: {name}")
+
     return _NOTE_MAP[note] + 12 * (octave + 1)
 
 
