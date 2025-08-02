@@ -1,0 +1,4 @@
+librosa
+PyQt5
+pyqtgraph
+pretty_midi
