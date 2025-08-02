@@ -54,10 +54,13 @@ def export_text(
         for note in seg.notes:
             line = f"{_format_time(note.start)} {note.name} ({note.duration:.1f}s)"
             if include_tab:
-                pos = midi_to_tab(note.midi)
-                if pos is not None:
-                    string, fret = pos
-                    line += f" - string {string} fret {fret}"
+                if note.string is not None and note.fret is not None:
+                    line += f" - string {note.string} fret {note.fret}"
+                else:
+                    pos = midi_to_tab(note.midi)
+                    if pos is not None:
+                        string, fret = pos
+                        line += f" - string {string} fret {fret}"
             lines.append(line)
     with open(path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))

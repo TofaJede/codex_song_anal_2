@@ -45,6 +45,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.export_btn = QtWidgets.QPushButton('Export as MIDI')
         self.export_text_btn = QtWidgets.QPushButton('Export Notes as Text')
         self.reset_btn = QtWidgets.QPushButton('Reset')
+        self.view_toggle = QtWidgets.QComboBox()
+        self.view_toggle.addItems(['Piano Roll', 'Guitar Tab'])
         for btn in (
             self.analyze_btn,
             self.export_btn,
@@ -54,12 +56,15 @@ class MainWindow(QtWidgets.QMainWindow):
             btn.setStyleSheet(f'background-color:{accent}; color:white; padding:8px;')
             btn.setCursor(QtCore.Qt.PointingHandCursor)
             buttons.addWidget(btn)
+        self.view_toggle.setStyleSheet(f'background-color:{accent}; color:white; padding:8px;')
+        buttons.addWidget(self.view_toggle)
         layout.addLayout(buttons)
 
         self.analyze_btn.setToolTip('Analyze the selected audio file')
         self.export_btn.setToolTip('Export detected notes as a MIDI file')
         self.export_text_btn.setToolTip('Export detected notes as a text file')
         self.reset_btn.setToolTip('Clear the current song and analysis')
+        self.view_toggle.setToolTip('Toggle between piano roll and guitar tab views')
 
         self.info = QtWidgets.QTextEdit()
         self.info.setReadOnly(True)
@@ -81,6 +86,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.export_btn.clicked.connect(self.export)
         self.export_text_btn.clicked.connect(self.export_text)
         self.reset_btn.clicked.connect(self.reset)
+        self.view_toggle.currentIndexChanged.connect(self.change_view)
 
     def set_file(self, path: str):
         self.file_path = path
@@ -107,6 +113,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.info.setText('\n\n'.join(info_lines))
         self.piano.display(self.segments, self.percussion)
         dialog.close()
+
+    def change_view(self, index: int):
+        mode = 'piano' if index == 0 else 'guitar'
+        self.piano.set_mode(mode)
 
     def export(self):
         if not self.segments:

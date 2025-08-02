@@ -1,7 +1,9 @@
 import numpy as np
 import librosa
 from dataclasses import dataclass, field
-from typing import List, Tuple
+from typing import List, Tuple, Optional
+
+from .text_export import midi_to_tab
 
 @dataclass
 class NoteEvent:
@@ -9,6 +11,8 @@ class NoteEvent:
     start: float
     duration: float
     midi: int
+    string: Optional[int] = None
+    fret: Optional[int] = None
 
 @dataclass
 class SegmentAnalysis:
@@ -59,11 +63,33 @@ def _group_notes(times: np.ndarray, notes: np.ndarray, offset: float) -> List[No
     for n, t in zip(notes[1:], times[1:]):
         if n != current:
             midi_val = int(librosa.note_to_midi(current))
-            events.append(NoteEvent(current, start_time + offset, t - start_time, midi_val))
+            pos = midi_to_tab(midi_val)
+            string, fret = pos if pos is not None else (None, None)
+            events.append(
+                NoteEvent(
+                    current,
+                    start_time + offset,
+                    t - start_time,
+                    midi_val,
+                    string,
+                    fret,
+                )
+            )
             current = n
             start_time = t
     midi_val = int(librosa.note_to_midi(current))
-    events.append(NoteEvent(current, start_time + offset, times[-1] - start_time, midi_val))
+    pos = midi_to_tab(midi_val)
+    string, fret = pos if pos is not None else (None, None)
+    events.append(
+        NoteEvent(
+            current,
+            start_time + offset,
+            times[-1] - start_time,
+            midi_val,
+            string,
+            fret,
+        )
+    )
     return events
 
 
