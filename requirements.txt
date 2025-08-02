@@ -1,4 +1,4 @@
 librosa
 PyQt5
 pyqtgraph
-pretty_midi
+# pretty_midi  # optional, a lightweight fallback is included
