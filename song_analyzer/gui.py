@@ -10,6 +10,7 @@ class DropLabel(QtWidgets.QLabel):
         self.setAlignment(QtCore.Qt.AlignCenter)
         self.setStyleSheet('border:2px dashed rgb(100,51,162); padding:40px;')
         self.setAcceptDrops(True)
+        self.setToolTip('Drop an audio file here or click to browse')
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
             event.acceptProposedAction()
@@ -42,15 +43,28 @@ class MainWindow(QtWidgets.QMainWindow):
         self.reset_btn = QtWidgets.QPushButton('Reset')
         for btn in (self.analyze_btn, self.export_btn, self.reset_btn):
             btn.setStyleSheet(f'background-color:{accent}; color:white; padding:8px;')
+            btn.setCursor(QtCore.Qt.PointingHandCursor)
             buttons.addWidget(btn)
         layout.addLayout(buttons)
 
+        self.analyze_btn.setToolTip('Analyze the selected audio file')
+        self.export_btn.setToolTip('Export detected notes as a MIDI file')
+        self.reset_btn.setToolTip('Clear the current song and analysis')
+
         self.info = QtWidgets.QTextEdit()
         self.info.setReadOnly(True)
+        self.info.setToolTip('Displays details about the analyzed segments')
         layout.addWidget(self.info)
 
         self.piano = PianoRollWidget()
+        self.piano.setToolTip('Visual piano roll of detected notes')
         layout.addWidget(self.piano)
+
+        self.progress = QtWidgets.QProgressBar()
+        self.progress.setRange(0, 0)
+        self.progress.setVisible(False)
+        self.progress.setStyleSheet(f'QProgressBar::chunk{{background-color:{accent};}}')
+        layout.addWidget(self.progress)
 
         self.setCentralWidget(central)
         self.analyze_btn.clicked.connect(self.analyze)
@@ -64,6 +78,9 @@ class MainWindow(QtWidgets.QMainWindow):
     def analyze(self):
         if not self.file_path:
             return
+        self.progress.setFormat('Analyzing...')
+        self.progress.setVisible(True)
+        QtWidgets.QApplication.processEvents()
         self.segments = analyze_audio(self.file_path)
         info_lines = []
         for seg in self.segments:
@@ -72,16 +89,22 @@ class MainWindow(QtWidgets.QMainWindow):
             info_lines.append(line)
         self.info.setText('\n\n'.join(info_lines))
         self.piano.display(self.segments)
+        self.progress.setVisible(False)
 
     def export(self):
         if not self.segments:
             return
         path, _ = QtWidgets.QFileDialog.getSaveFileName(self, 'Save MIDI', filter='MIDI Files (*.mid)')
         if path:
+            self.progress.setFormat('Exporting...')
+            self.progress.setVisible(True)
+            QtWidgets.QApplication.processEvents()
             export_midi(self.segments, path)
+            self.progress.setVisible(False)
 
     def reset(self):
         self.file_path = None
         self.segments = []
         self.info.clear()
         self.piano.plot.clear()
+        self.progress.setVisible(False)

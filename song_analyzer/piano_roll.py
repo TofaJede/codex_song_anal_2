@@ -1,5 +1,5 @@
 import pyqtgraph as pg
-from pyqtgraph.Qt import QtGui
+from pyqtgraph.Qt import QtWidgets
 import librosa
 
 pg.setConfigOption('background', '#121212')
@@ -26,7 +26,7 @@ class PianoRollWidget(pg.GraphicsLayoutWidget):
             brush = pg.mkBrush(*color)
             for note in seg.notes:
                 pitch = librosa.note_to_midi(note.name)
-                rect = QtGui.QGraphicsRectItem(note.start, pitch, note.duration, 1)
+                rect = QtWidgets.QGraphicsRectItem(note.start, pitch, note.duration, 1)
                 rect.setBrush(brush)
                 rect.setPen(pg.mkPen(None))
                 self.plot.addItem(rect)
