@@ -8,6 +8,7 @@ class NoteEvent:
     name: str
     start: float
     duration: float
+    midi: int
 
 @dataclass
 class SegmentAnalysis:
@@ -57,10 +58,12 @@ def _group_notes(times: np.ndarray, notes: np.ndarray, offset: float) -> List[No
     start_time = times[0]
     for n, t in zip(notes[1:], times[1:]):
         if n != current:
-            events.append(NoteEvent(current, start_time + offset, t - start_time))
+            midi_val = int(librosa.note_to_midi(current))
+            events.append(NoteEvent(current, start_time + offset, t - start_time, midi_val))
             current = n
             start_time = t
-    events.append(NoteEvent(current, start_time + offset, times[-1] - start_time))
+    midi_val = int(librosa.note_to_midi(current))
+    events.append(NoteEvent(current, start_time + offset, times[-1] - start_time, midi_val))
     return events
 
 

@@ -1,6 +1,5 @@
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtWidgets
-import librosa
 from typing import List
 from .analysis import SegmentAnalysis, PercussionEvent
 
@@ -38,8 +37,7 @@ class PianoRollWidget(pg.GraphicsLayoutWidget):
             color = colors.get(seg.name, (200, 200, 200))
             brush = pg.mkBrush(*color)
             for note in seg.notes:
-                pitch = librosa.note_to_midi(note.name)
-                rect = QtWidgets.QGraphicsRectItem(note.start, pitch, note.duration, 1)
+                rect = QtWidgets.QGraphicsRectItem(note.start, note.midi, note.duration, 1)
                 rect.setBrush(brush)
                 rect.setPen(pg.mkPen(None))
                 self.melody_plot.addItem(rect)
