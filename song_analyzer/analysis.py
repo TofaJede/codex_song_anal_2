@@ -32,9 +32,41 @@ def _group_notes(times: np.ndarray, notes: np.ndarray, offset: float) -> List[No
     return events
 
 
+def _estimate_key_fallback(segment: np.ndarray, sr: int) -> str:
+    """Fallback key estimator using chroma profile correlation.
+
+    Returns a string like "C major" or "A minor". If the estimation fails, the
+    string "Unknown" is returned.
+    """
+    try:
+        chroma = librosa.feature.chroma_cqt(y=segment, sr=sr)
+        profile = chroma.mean(axis=1)
+        major_template = np.array(
+            [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88]
+        )
+        minor_template = np.array(
+            [6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17]
+        )
+        keys = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+        major_scores = [
+            np.corrcoef(np.roll(major_template, i), profile)[0, 1] for i in range(12)
+        ]
+        minor_scores = [
+            np.corrcoef(np.roll(minor_template, i), profile)[0, 1] for i in range(12)
+        ]
+        if np.nanmax(major_scores) >= np.nanmax(minor_scores):
+            return f"{keys[int(np.nanargmax(major_scores))]} major"
+        return f"{keys[int(np.nanargmax(minor_scores))]} minor"
+    except Exception:
+        return "Unknown"
+
+
 def analyze_segment(segment: np.ndarray, sr: int, name: str, offset: float) -> SegmentAnalysis:
     tempo, _ = librosa.beat.beat_track(y=segment, sr=sr)
-    key = librosa.key.estimate_key(segment, sr=sr)
+    try:
+        key = librosa.key.estimate_key(segment, sr=sr)
+    except AttributeError:
+        key = _estimate_key_fallback(segment, sr)
     f0, _, _ = librosa.pyin(segment,
                            fmin=librosa.note_to_hz('C2'),
                            fmax=librosa.note_to_hz('C7'))

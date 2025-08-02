@@ -27,4 +27,6 @@ python main.py
 This project requires packages such as `librosa`, `PyQt5` and `pyqtgraph` which may need
 system dependencies to install. MIDI export can optionally use `pretty_midi` if it is
 available, but a minimal fallback implementation is bundled with the project. The
-application does not provide audio playback.
+application does not provide audio playback. Accurate key detection relies on
+`librosa>=0.10`; older versions fall back to a simple chroma-profile correlation and may
+return `"Unknown"` when the key cannot be determined.
